@@ -32,6 +32,27 @@ jobs:
         ports:
           - 6379:6379
 
+      # Add services for ASGI and WSGI servers using Docker Compose
+      asgi-server:
+        image: app:django  # Replace with actual image name
+        depends_on:
+          - db
+          - redis
+        ports:
+          - 8000:8000
+        environment:
+          <<: *backend-environment
+
+      wsgi-server:
+        image: app:django  # Replace with actual image name
+        depends_on:
+          - db
+          - redis
+        ports:
+          - 8001:8001
+        environment:
+          <<: *backend-environment
+
     env:
       DJANGO_SETTINGS_MODULE: settings.settings.prod
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/mega_mailer

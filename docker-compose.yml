@@ -17,7 +17,6 @@ x-backend-base: &backend-base
     - ./src/media:/mm/src/media/
 
 x-backend: &backend
-  image: app:django
   <<: *backend-base
   environment:
     <<: *backend-environment
@@ -61,21 +60,25 @@ services:
           cpus: '1'
           memory: 4G
 
-  # Django Gunicorn ASGI App
+  # Django ASGI App with Daphne
+  asgi-server:
+    <<: *backend
+    ports:
+      - 8000:8000
+    command: sh -c "./scripts/wait-for-it.sh db:5432 -- daphne -b 0.0.0.0 -p 8000 settings.asgi:application"
+    depends_on:
+      - db
+      - redis
+
+  # Django WSGI App with Gunicorn
   wsgi-server:
     <<: *backend
     ports:
-      - 8000:8000  # Пример порта для Gunicorn (можно использовать любой свободный)
-    links:
+      - 8001:8001  # Example port for Gunicorn (can use any free port)
+    command: sh -c "./scripts/wait-for-it.sh db:5432 -- gunicorn --bind 0.0.0.0:8001 --workers 4 settings.wsgi:application"
+    depends_on:
       - db
       - redis
-    container_name: mm_wsgi
-    command: sh -c "./scripts/wait-for-it.sh db:5432 -- gunicorn --bind 0.0.0.0:8000 --workers 4 settings.asgi:application"
-    depends_on:
-      db:
-        condition: service_healthy
-
-  # Celery, Flower, Nginx и другие сервисы остаются без изменений
 
   # Nginx
   nginx:
