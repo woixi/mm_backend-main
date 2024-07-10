@@ -8,7 +8,7 @@ x-backend-environment: &backend-environment
 x-backend-base: &backend-base
   build:
     context: .
-    dockerfile: ./Dockerfile
+    dockerfile: Dockerfile
   volumes:
     - ./:/mm
     - ./logs:/mm/logs/
@@ -95,8 +95,7 @@ services:
       - db
       - redis
     container_name: mm_wsgi
-    command: >
-     sh -c "./scripts/wait-for-it.sh db:5432 -- sh ./scripts/entrypoint-wsgi-web.sh"
+    command: sh -c "./scripts/wait-for-it.sh db:5432 -- sh ./scripts/entrypoint-wsgi-web.sh"
     depends_on:
       db:
         condition: service_healthy
@@ -105,8 +104,7 @@ services:
   celery-worker-beat:
     restart: always
     <<: *backend
-    command: >
-      sh -c "./scripts/wait-for-it.sh db:5432 -- sh ./scripts/entrypoint-worker.sh"
+    command: sh -c "./scripts/wait-for-it.sh db:5432 -- sh ./scripts/entrypoint-worker.sh"
     volumes:
       - .:/mm
     container_name: mm_celery
@@ -120,8 +118,7 @@ services:
   # Flower
   flower:
     <<: *backend
-    command: >
-      sh -c "./scripts/wait-for-it.sh db:5432 -- sh ./scripts/entrypoint-flower.sh"
+    command: sh -c "./scripts/wait-for-it.sh db:5432 -- sh ./scripts/entrypoint-flower.sh"
     volumes:
       - .:/mm
     ports:

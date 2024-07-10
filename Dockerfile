@@ -1,40 +1,40 @@
+# Используем базовый образ Python 3.12 slim на основе Debian Bullseye
 FROM python:3.12-slim-bullseye
 
+# Определяем переменные окружения для Python
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+# Обновляем и устанавливаем необходимые зависимости
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
         libpython3-dev \
         libpq-dev \
-        gcc && \
+        gcc \
+        gettext && \
     rm -rf /var/lib/apt/lists/*
 
+# Обновляем pip до последней версии
 RUN pip install --upgrade pip
 
-ENV APP__HOME_DIR=/mm
-ENV PYTHONPATH=/mm/src
+# Устанавливаем рабочую директорию внутри контейнера
+ENV APP_HOME_DIR /mm
+ENV PYTHONPATH $APP_HOME_DIR/src
+WORKDIR $APP_HOME_DIR
 
-# set work directory
-WORKDIR $APP__HOME_DIR
+# Создаем необходимые директории
+RUN mkdir -p $APP_HOME_DIR/logs
+RUN mkdir -p $APP_HOME_DIR/src/media/attachments
 
-# set work directory
-RUN mkdir -p $APP__HOME_DIR
-RUN mkdir -p $APP__HOME_DIR/logs
-RUN mkdir -p $APP__HOME_DIR/src
-# RUN mkdir -p $APP__HOME_DIR/docker/backend
-RUN mkdir -p $APP__HOME_DIR/src/media/attachments/
+# Копируем файл requirements.txt и устанавливаем зависимости
+COPY ./requirements.txt $APP_HOME_DIR/requirements.txt
+RUN pip install -r $APP_HOME_DIR/requirements.txt
 
-# install dependences
-COPY ./requirements.txt /mm/requirements.txt
-RUN pip install -r /mm/requirements.txt
-
-RUN apt-get -y update
-RUN apt-get install gettext -y
-
-# set display port to avoid crash
-ENV DISPLAY=:99
-
-# set open port
+# Указываем порт, который будем экспонировать
 EXPOSE 8000
 
+# Определяем переменную окружения для дисплея, чтобы избежать сбоев
+ENV DISPLAY=:99
+
+# Запускать приложение можно будет через docker-compose
+CMD ["python", "src/manage.py", "runserver", "0.0.0.0:8000"]
