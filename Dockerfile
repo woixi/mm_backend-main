@@ -36,5 +36,5 @@ EXPOSE 8000
 # Определяем переменную окружения для дисплея, чтобы избежать сбоев
 ENV DISPLAY=:99
 
-# Запускать приложение можно будет через docker-compose
-CMD ["python", "src/manage.py", "runserver", "0.0.0.0:8000"]
+# Запуск Gunicorn для ASGI-приложения
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "settings.asgi:application"]
