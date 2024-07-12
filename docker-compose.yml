@@ -29,6 +29,13 @@ services:
     container_name: mm_redis
     ports:
       - 6380:6379
+    networks:
+      - redis-django
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Database Postgres
   db:
@@ -42,14 +49,14 @@ services:
     volumes:
       - ./data/db:/var/lib/postgresql/data
     environment:
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=mega_mailer
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
     ports:
       - ${POSTGRES_PORT:-5433}:5432
     container_name: mm_postgres
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d mega_mailer" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -59,6 +66,8 @@ services:
         limits:
           cpus: '1'
           memory: 4G
+    networks:
+      - redis-django
 
   # Django ASGI App with Daphne
   asgi-server:
@@ -69,6 +78,13 @@ services:
     depends_on:
       - db
       - redis
+    networks:
+      - redis-django
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Django WSGI App with Gunicorn
   wsgi-server:
@@ -79,6 +95,13 @@ services:
     depends_on:
       - db
       - redis
+    networks:
+      - redis-django
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Nginx
   nginx:
